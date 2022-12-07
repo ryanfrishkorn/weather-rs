@@ -65,14 +65,10 @@ async fn main() {
     let forecast: Forecast = serde_json::from_str(content.as_str()).expect("could not parse json content");
     // println!("{:?}", forecast);
     let num_periods = 2;
-    let mut counter = 0;
-
-    for period in forecast.properties.periods {
-        counter += 1;
-        if counter <= num_periods {
-            print!("{}: ", period.name);
-            print!("{}\n", period.detailedForecast);
-        }
+    for (i, period) in forecast.properties.periods.iter().enumerate() {
+        if i >= num_periods { break; }
+        print!("{}: ", period.name);
+        print!("{}\n", period.detailedForecast);
     }
 }
 
