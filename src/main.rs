@@ -1,14 +1,16 @@
 // use std::collections::HashMap;
 use reqwest::header::USER_AGENT;
-// use serde::{Deserialize};
+use serde::{Deserialize};
 use tokio;
 
+#[derive(Debug, Deserialize)]
 struct Forecast {
     properties: Properties,
     // periods: Vec<Period>,
 }
 
 #[allow(non_snake_case)]
+#[derive(Debug, Deserialize)]
 struct Properties {
     updated: String,
     forecastGenerator: String,
@@ -19,6 +21,7 @@ struct Properties {
 }
 
 #[allow(non_snake_case)]
+#[derive(Debug, Deserialize)]
 struct Period {
     number: u8,
     name: String,
@@ -26,8 +29,8 @@ struct Period {
     endTime: String,
     isDaytime: bool,
     temperature: u8,
-    temperatureTrend: String,
-    windSpeed: u8,
+    temperatureTrend: Option<String>,
+    windSpeed: String,
     windDirection: String,
     shortForecast: String,
     detailedForecast: String,
@@ -55,12 +58,14 @@ async fn main() {
     };
 
     // println!("response: {:?}", response);
-    let text = match response.text().await {
+    let content = match response.text().await {
         Ok(t) => t,
         Err(e) => panic!("error getting body: {}", e),
     };
 
-    println!("{}", text);
+    println!("{}", content);
+    let forecast: Forecast = serde_json::from_str(content.as_str()).expect("could not parse json content");
+    println!("{:?}", forecast);
 }
 
 // NWS Request:
