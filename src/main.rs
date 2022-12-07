@@ -1,15 +1,12 @@
-// use std::collections::HashMap;
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize};
-use tokio;
 
 #[derive(Debug, Deserialize)]
 struct Forecast {
     properties: Properties,
-    // periods: Vec<Period>,
 }
 
-#[allow(non_snake_case)]
+#[allow(non_snake_case, dead_code)]
 #[derive(Debug, Deserialize)]
 struct Properties {
     updated: String,
@@ -20,7 +17,7 @@ struct Properties {
     periods: Vec<Period>,
 }
 
-#[allow(non_snake_case)]
+#[allow(non_snake_case, dead_code)]
 #[derive(Debug, Deserialize)]
 struct Period {
     number: u8,
@@ -38,9 +35,10 @@ struct Period {
 
 #[tokio::main]
 async fn main() {
-    // println!("Weather!");
     // Locate grid data by lat/lon
-    // let url = "https://api.weather.gov/points/36.1744,-115.2721";
+    // let latitude: f32 = 36.1744;
+    // let longitude: f32 = -115.2721;
+    // let grid_url = format!("https://api.weather.gov/points/{},{}", latitude, longitude);
 
     // Specify grid point - this gives raw numerical data
     // let url = "https://api.weather.gov/gridpoints/VEF/117,98";
@@ -63,9 +61,19 @@ async fn main() {
         Err(e) => panic!("error getting body: {}", e),
     };
 
-    println!("{}", content);
+    // println!("{}", content);
     let forecast: Forecast = serde_json::from_str(content.as_str()).expect("could not parse json content");
-    println!("{:?}", forecast);
+    // println!("{:?}", forecast);
+    let num_periods = 2;
+    let mut counter = 0;
+
+    for period in forecast.properties.periods {
+        counter += 1;
+        if counter <= num_periods {
+            print!("{}: ", period.name);
+            print!("{}\n", period.detailedForecast);
+        }
+    }
 }
 
 // NWS Request:
