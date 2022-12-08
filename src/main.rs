@@ -77,27 +77,27 @@ async fn main() {
     print!("Current Conditions:\n");
 
     match observation.properties.temperature.value {
-        Some(v) => print!("    Temperature: {:?}\n", v),
-        None => (),
+        Some(v) => print!("    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
+        None => ()
     }
     match observation.properties.heatIndex.value {
-        Some(v) => print!("    Heat Index: {:?}\n", v),
+        Some(v) => print!("    Heat Index: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
         None => (),
     }
     match observation.properties.windChill.value {
-        Some(v) => print!("    Wind Chill: {:?}\n", v),
+        Some(v) => print!("    Wind Chill: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
         None => (),
     }
     match observation.properties.windSpeed.value {
-        Some(v) => print!("    Wind Speed: {:?}\n", v),
+        Some(v) => print!("    Wind Speed: {:?} km/h\n", v),
         None => (),
     }
     match observation.properties.windGust.value {
-        Some(v) => print!("    Wind Gusts: {:?}\n", v),
+        Some(v) => print!("    Wind Gusts: {:?} km/h\n", v),
         None => (),
     }
     match observation.properties.barometricPressure.value {
-        Some(v) => print!("    Barometer: {:?}\n", v),
+        Some(v) => print!("    Barometer: {:.0?} mbar\n", pascals_to_millibars(v)),
         None  => (),
     }
     print!("\n");
@@ -107,9 +107,7 @@ async fn main() {
     let forecast_data = make_request(forecast_url).await;
 
     print!("Forecast:\n");
-    // println!("{}", forecast_data);
     let forecast: Forecast = serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
-    // println!("{:?}", forecast);
     let num_periods = 2;
     for (i, period) in forecast.properties.periods.iter().enumerate() {
         if i >= num_periods { break; }
@@ -127,12 +125,22 @@ async fn make_request(url: &str) -> String {
         Err(e) => panic!("error waiting for response: {}", e),
     };
 
-    // println!("response: {:?}", response);
     let content = match response.text().await {
         Ok(t) => t,
         Err(e) => panic!("error getting body: {}", e),
     };
     content
+}
+
+fn celsius_to_fahrenheit(celsius: f64) -> f64 {
+    let ratio: f64 = 9.0 / 5.0;
+    let fahrenheit: f64 = ( celsius * ratio ) + 32.0;
+    fahrenheit
+}
+
+fn pascals_to_millibars(pascals: f64) -> f64 {
+    let millibars = pascals / 100.0;
+    millibars.trunc()
 }
 
 // NWS Request:
