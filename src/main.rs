@@ -3,23 +3,23 @@ use serde::{Deserialize};
 
 #[derive(Debug, Deserialize)]
 struct Forecast {
-    properties: Properties,
+    properties: ForecastProperties,
 }
 
 #[allow(non_snake_case, dead_code)]
 #[derive(Debug, Deserialize)]
-struct Properties {
+struct ForecastProperties {
     updated: String,
     forecastGenerator: String,
     generatedAt: String,
     updateTime: String,
     validTimes: String,
-    periods: Vec<Period>,
+    periods: Vec<ForecastPeriod>,
 }
 
 #[allow(non_snake_case, dead_code)]
 #[derive(Debug, Deserialize)]
-struct Period {
+struct ForecastPeriod {
     number: u8,
     name: String,
     startTime: String,
@@ -33,6 +33,32 @@ struct Period {
     detailedForecast: String,
 }
 
+#[allow(non_snake_case, dead_code)]
+#[derive(Debug, Deserialize)]
+struct Observation {
+    properties: ObservationProperties,
+}
+
+#[allow(non_snake_case, dead_code)]
+#[derive(Debug, Deserialize)]
+struct ObservationProperties {
+    temperature: ObservationValue,
+    windDirection: ObservationValue,
+    windSpeed: ObservationValue,
+    windGust: ObservationValue,
+    barometricPressure: ObservationValue,
+    relativeHumidity: ObservationValue,
+    windChill: ObservationValue,
+    heatIndex: ObservationValue,
+}
+
+#[allow(non_snake_case, dead_code)]
+#[derive(Debug, Deserialize)]
+struct ObservationValue {
+    unitCode: String,
+    value: Option<f64>,
+}
+
 #[tokio::main]
 async fn main() {
     // Locate grid data by lat/lon
@@ -41,11 +67,57 @@ async fn main() {
     // let grid_url = format!("https://api.weather.gov/points/{},{}", latitude, longitude);
 
     // Specify grid point - this gives raw numerical data
-    // let url = "https://api.weather.gov/gridpoints/VEF/117,98";
+    // let forecast_raw_url = "https://api.weather.gov/gridpoints/VEF/117,98";
+
+    // Latest station observation
+    let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest";
+    let observation_data = make_request(observation_url).await;
+
+    let observation: Observation = serde_json::from_str(observation_data.as_str()).expect("could not parse observation json data");
+    print!("Current Conditions:\n");
+
+    match observation.properties.temperature.value {
+        Some(v) => print!("    Temperature: {:?}\n", v),
+        None => (),
+    }
+    match observation.properties.heatIndex.value {
+        Some(v) => print!("    Heat Index: {:?}\n", v),
+        None => (),
+    }
+    match observation.properties.windChill.value {
+        Some(v) => print!("    Wind Chill: {:?}\n", v),
+        None => (),
+    }
+    match observation.properties.windSpeed.value {
+        Some(v) => print!("    Wind Speed: {:?}\n", v),
+        None => (),
+    }
+    match observation.properties.windGust.value {
+        Some(v) => print!("    Wind Gusts: {:?}\n", v),
+        None => (),
+    }
+    match observation.properties.barometricPressure.value {
+        Some(v) => print!("    Barometer: {:?}\n", v),
+        None  => (),
+    }
+    print!("\n");
 
     // Forecast
-    let url = "https://api.weather.gov/gridpoints/VEF/117,98/forecast";
+    let forecast_url = "https://api.weather.gov/gridpoints/VEF/117,98/forecast";
+    let forecast_data = make_request(forecast_url).await;
 
+    print!("Forecast:\n");
+    // println!("{}", forecast_data);
+    let forecast: Forecast = serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
+    // println!("{:?}", forecast);
+    let num_periods = 2;
+    for (i, period) in forecast.properties.periods.iter().enumerate() {
+        if i >= num_periods { break; }
+        print!("    {}: {}\n", period.name, period.detailedForecast);
+    }
+}
+
+async fn make_request(url: &str) -> String {
     let client = reqwest::Client::new();
     let response = match client.get(url)
         .header(USER_AGENT, "rust-implementation/console")
@@ -60,22 +132,12 @@ async fn main() {
         Ok(t) => t,
         Err(e) => panic!("error getting body: {}", e),
     };
-
-    // println!("{}", content);
-    let forecast: Forecast = serde_json::from_str(content.as_str()).expect("could not parse json content");
-    // println!("{:?}", forecast);
-    let num_periods = 2;
-    for (i, period) in forecast.properties.periods.iter().enumerate() {
-        if i >= num_periods { break; }
-        print!("{}: ", period.name);
-        print!("{}\n", period.detailedForecast);
-    }
+    content
 }
 
 // NWS Request:
 //
-// 36.17446 N, 115.27203 W
-// https://api.weather.gov/points/36.1744,-115.2721
+// https://api.weather.gov/gridpoints/VEF/117,98/forecast
 
 // Response Data:
 //
