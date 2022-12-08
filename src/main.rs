@@ -92,6 +92,10 @@ async fn main() {
         Some(v) => print!("    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
         None => ()
     }
+    match observation.properties.relativeHumidity.value {
+        Some(v) => print!("    Humidity: {:.2?}%\n", v),
+        None => ()
+    }
     match observation.properties.heatIndex.value {
         Some(v) => print!("    Heat Index: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
         None => (),
