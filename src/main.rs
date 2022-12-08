@@ -70,17 +70,6 @@ async fn main() {
     // Specify grid point - this gives raw numerical data
     // let forecast_raw_url = "https://api.weather.gov/gridpoints/VEF/117,98";
 
-    /*
-    let measurements: Vec<f64> = vec![ 12.0, 33.6, 45.0, 45.1, 89.8, 126.3, 172.3, 223.6, 331.0, 353.0 ];
-    for m in measurements {
-        let degrees = match degrees_to_direction(m) {
-            Ok(s) => s,
-            Err(e) => panic!("error obtaining direction: {}", e),
-        };
-        println!("direction: {:?} is {:?}", m, degrees);
-    }
-    */
-
     // Latest station observation
     let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest";
     let observation_data = make_request(observation_url).await;
@@ -173,36 +162,43 @@ fn pascals_to_millibars(pascals: f64) -> f64 {
 }
 
 fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
-    let unit_quarter = 22.5;
+    // Human readable directions to be referenced by index
+    let phrase: Vec<&str> = vec![
+        "North",
+        "North Northeast",
+        "Northeast",
+        "East Northeast",
+        "East",
+        "East Southeast",
+        "Southeast",
+        "South Southeast",
+        "South",
+        "South Southwest",
+        "Southwest",
+        "West Southwest",
+        "West",
+        "West Northwest",
+        "Northwest",
+        "North Northwest",
+    ];
 
-    // like slicing a clock
-    if direction <= 0.0 + unit_quarter {
-        return Ok("North".to_string());
-    }
-    if direction <= 45.0 + unit_quarter {
-        return Ok("Northeast".to_string());
-    }
-    if direction <= 90.0 + unit_quarter {
-        return Ok("East".to_string());
-    }
-    if direction <= 135.0 + unit_quarter {
-        return Ok("Southeast".to_string());
-    }
-    if direction <= 180.0 + unit_quarter {
-        return Ok("South".to_string());
-    }
-    if direction <= 225.0 + unit_quarter {
-        return Ok("Southwest".to_string());
-    }
-    if direction <=  270.0 + unit_quarter {
-        return Ok("West".to_string());
-    }
-    if direction <= 315.0 + unit_quarter {
-        return Ok("Northwest".to_string());
-    }
-    if direction <= 360.0 {
-        return Ok("North".to_string());
+    // This is the smallest slice of directional resolution
+    const NOTCH_SIZE: f64 = 22.5;
+
+    let mut index = 0;
+    let mut notch = 0.0;
+
+    while index <= phrase.len() && direction <= 360.0 {
+        // specify first element (North) on final iteration
+        if index == phrase.len() {
+            return Ok(phrase[0].to_string());
+        }
+        if direction <= notch + (NOTCH_SIZE / 2.0) {
+            return Ok(phrase[index].to_string());
+        }
+        notch += NOTCH_SIZE;
+        index += 1;
     }
 
-    Err(io::Error::new(io::ErrorKind::InvalidData, "could not discern direction"))
+    Err(io::Error::new(io::ErrorKind::InvalidData, format!("could not discern direction from value {:?}", direction)))
 }
