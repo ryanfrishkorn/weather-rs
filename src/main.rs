@@ -193,36 +193,3 @@ fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
 
     Err(io::Error::new(io::ErrorKind::InvalidData, "could not discern direction"))
 }
-// NWS Request:
-//
-// https://api.weather.gov/gridpoints/VEF/117,98/forecast
-
-// Response Data:
-//
-// "properties": {
-//   "updated": "2022-12-06T20:12:59+00:00",
-//   "units": "us",
-//   "forecastGenerator": "BaselineForecastGenerator",
-//   "generatedAt": "2022-12-06T22:46:16+00:00",
-//   "updateTime": "2022-12-06T20:12:59+00:00",
-//   "validTimes": "2022-12-06T14:00:00+00:00/P8DT6H",
-//   "elevation": {
-//     "unitCode": "wmoUnit:m",
-//     "value": 779.9832
-//   },
-//   "periods": [
-//     {
-//       "number": 1,
-//       "name": "This Afternoon",
-//       "startTime": "2022-12-06T14:00:00-08:00",
-//       "endTime": "2022-12-06T18:00:00-08:00",
-//       "isDaytime": true,
-//       "temperature": 56,
-//       "temperatureUnit": "F",
-//       "temperatureTrend": "falling",
-//       "windSpeed": "3 mph",
-//       "windDirection": "ESE",
-//       "icon": "https://api.weather.gov/icons/land/day/bkn?size=medium",
-//       "shortForecast": "Partly Sunny",
-//       "detailedForecast": "Partly sunny. High near 56, with temperatures falling to around 53 in the afternoon. East southeast wind around 3 mph."
-//     },
