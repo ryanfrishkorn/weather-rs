@@ -105,7 +105,7 @@ async fn main() {
         None  => (),
     }
     match observation.properties.windSpeed.value {
-        Some(v) => print!("    Wind Speed: {:?} km/h\n", v),
+        Some(v) => print!("    Wind Speed: {:.2?} mi/h / {:.2?} km/h\n", kilometers_to_miles(v), v),
         None => (),
     }
     match observation.properties.windGust.value {
@@ -152,6 +152,15 @@ fn celsius_to_fahrenheit(celsius: f64) -> f64 {
     let ratio: f64 = 9.0 / 5.0;
     let fahrenheit: f64 = ( celsius * ratio ) + 32.0;
     fahrenheit
+}
+
+fn kilometers_to_miles(kilometers: f64) -> f64 {
+    if kilometers == 0.0 {
+        return 0.0;
+    }
+    let mile_in_meters: f64 = 1609.344;
+    let meters = kilometers * 1000.0;
+    meters / mile_in_meters
 }
 
 fn pascals_to_millibars(pascals: f64) -> f64 {
