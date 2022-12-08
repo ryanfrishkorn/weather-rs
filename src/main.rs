@@ -1,3 +1,4 @@
+use std::io;
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize};
 
@@ -69,6 +70,17 @@ async fn main() {
     // Specify grid point - this gives raw numerical data
     // let forecast_raw_url = "https://api.weather.gov/gridpoints/VEF/117,98";
 
+    /*
+    let measurements: Vec<f64> = vec![ 12.0, 33.6, 45.0, 45.1, 89.8, 126.3, 172.3, 223.6, 331.0, 353.0 ];
+    for m in measurements {
+        let degrees = match degrees_to_direction(m) {
+            Ok(s) => s,
+            Err(e) => panic!("error obtaining direction: {}", e),
+        };
+        println!("direction: {:?} is {:?}", m, degrees);
+    }
+    */
+
     // Latest station observation
     let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest";
     let observation_data = make_request(observation_url).await;
@@ -87,6 +99,10 @@ async fn main() {
     match observation.properties.windChill.value {
         Some(v) => print!("    Wind Chill: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
         None => (),
+    }
+    match observation.properties.windDirection.value {
+        Some(v) => print!("    Wind Direction: {:.0?}\u{00B0} {}\n", v, degrees_to_direction(v).unwrap()),
+        None  => (),
     }
     match observation.properties.windSpeed.value {
         Some(v) => print!("    Wind Speed: {:?} km/h\n", v),
@@ -143,6 +159,40 @@ fn pascals_to_millibars(pascals: f64) -> f64 {
     millibars.trunc()
 }
 
+fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
+    let unit_quarter = 22.5;
+
+    // like slicing a clock
+    if direction <= 0.0 + unit_quarter {
+        return Ok("North".to_string());
+    }
+    if direction <= 45.0 + unit_quarter {
+        return Ok("Northeast".to_string());
+    }
+    if direction <= 90.0 + unit_quarter {
+        return Ok("East".to_string());
+    }
+    if direction <= 135.0 + unit_quarter {
+        return Ok("Southeast".to_string());
+    }
+    if direction <= 180.0 + unit_quarter {
+        return Ok("South".to_string());
+    }
+    if direction <= 225.0 + unit_quarter {
+        return Ok("Southwest".to_string());
+    }
+    if direction <=  270.0 + unit_quarter {
+        return Ok("West".to_string());
+    }
+    if direction <= 315.0 + unit_quarter {
+        return Ok("Northwest".to_string());
+    }
+    if direction <= 360.0 {
+        return Ok("North".to_string());
+    }
+
+    Err(io::Error::new(io::ErrorKind::InvalidData, "could not discern direction"))
+}
 // NWS Request:
 //
 // https://api.weather.gov/gridpoints/VEF/117,98/forecast
