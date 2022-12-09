@@ -147,20 +147,6 @@ fn celsius_to_fahrenheit(celsius: f64) -> f64 {
     fahrenheit
 }
 
-fn kilometers_to_miles(kilometers: f64) -> f64 {
-    if kilometers == 0.0 {
-        return 0.0;
-    }
-    let mile_in_meters: f64 = 1609.344;
-    let meters = kilometers * 1000.0;
-    meters / mile_in_meters
-}
-
-fn pascals_to_millibars(pascals: f64) -> f64 {
-    let millibars = pascals / 100.0;
-    millibars.trunc()
-}
-
 fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
     // Human readable directions to be referenced by index
     let phrase: Vec<&str> = vec![
@@ -201,4 +187,18 @@ fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
     }
 
     Err(io::Error::new(io::ErrorKind::InvalidData, format!("could not discern direction from value {:?}", direction)))
+}
+
+fn kilometers_to_miles(kilometers: f64) -> f64 {
+    if kilometers == 0.0 {
+        return 0.0;
+    }
+    let mile_in_meters: f64 = 1609.344;
+    let meters = kilometers * 1000.0;
+    meters / mile_in_meters
+}
+
+fn pascals_to_millibars(pascals: f64) -> f64 {
+    let millibars = pascals / 100.0;
+    millibars.trunc()
 }
