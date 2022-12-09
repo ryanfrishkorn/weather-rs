@@ -93,13 +93,13 @@ async fn main() {
         Some(v) => print!("    Wind Chill: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
         None => (),
     }
-    match observation.properties.windDirection.value {
-        Some(v) => print!("    Wind Direction: {:.0?}\u{00B0} {}\n", v, degrees_to_direction(v).unwrap()),
-        None  => (),
-    }
     match observation.properties.windSpeed.value {
         Some(v) => print!("    Wind Speed: {:.2?} mi/h / {:.2?} km/h\n", kilometers_to_miles(v), v),
         None => (),
+    }
+    match observation.properties.windDirection.value {
+        Some(v) => print!("    Wind Direction: {:.0?}\u{00B0} {}\n", v, degrees_to_direction(v).unwrap()),
+        None  => (),
     }
     match observation.properties.windGust.value {
         Some(v) => print!("    Wind Gusts: {:?} km/h\n", v),
