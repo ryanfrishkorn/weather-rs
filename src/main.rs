@@ -71,14 +71,18 @@ async fn main() {
     // let forecast_raw_url = "https://api.weather.gov/gridpoints/VEF/117,98";
 
     // Latest station observation
-    let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest";
+    let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest"; // NLV Airport
+    // let observation_url = "https://api.weather.gov/stations/KLSV/observations/latest"; // Nellis AFB
+    // let observation_url = "https://api.weather.gov/stations/RRKN2/observations/latest"; // Red Rock
+    // let observation_url = "https://api.weather.gov/stations/CMP10/observations/latest"; // Henderson
     let observation_data = match make_request(observation_url).await {
         Ok(d) => d,
         Err(e) => panic!("error requesting observation data: {}", e),
     };
+    // println!("{:?}", observation_data);
 
     let observation: Observation = serde_json::from_str(observation_data.as_str()).expect("could not parse observation json data");
-    print!("Current Conditions:\n");
+    print!("Current Conditions\n");
 
     match observation.properties.temperature.value {
         Some(v) => print!("    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
@@ -124,7 +128,7 @@ async fn main() {
         },
     };
 
-    print!("Forecast:\n");
+    print!("Forecast\n");
     let forecast: Forecast = serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
     let num_periods = 2;
     for (i, period) in forecast.properties.periods.iter().enumerate() {
