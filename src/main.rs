@@ -1,6 +1,6 @@
-use std::{io, include_str};
 use reqwest::header::USER_AGENT;
-use serde::{Deserialize};
+use serde::Deserialize;
+use std::{include_str, io};
 
 #[derive(Debug, Deserialize)]
 struct Forecast {
@@ -70,7 +70,7 @@ async fn main() {
         Err(e) => {
             println!("result: {:?}", e);
             std::process::exit(1);
-        },
+        }
     }
 
     // Locate grid data by lat/lon
@@ -82,21 +82,26 @@ async fn main() {
     // let forecast_raw_url = "https://api.weather.gov/gridpoints/VEF/117,98";
 
     // Latest station observation
-    let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest"; // NLV Airport
-    // let observation_url = "https://api.weather.gov/stations/KLSV/observations/latest"; // Nellis AFB
-    // let observation_url = "https://api.weather.gov/stations/RRKN2/observations/latest"; // Red Rock
-    // let observation_url = "https://api.weather.gov/stations/CMP10/observations/latest"; // Henderson
+    let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest"; /* NLV Airport */
+    // let observation_url = "https://api.weather.gov/stations/KLSV/observations/latest"; /* Nellis AFB */
+    // let observation_url = "https://api.weather.gov/stations/RRKN2/observations/latest"; /* Red Rock */
+    // let observation_url = "https://api.weather.gov/stations/CMP10/observations/latest"; /* Henderson */
     let observation_data = match make_request(observation_url).await {
         Ok(d) => d,
         Err(e) => panic!("error requesting observation data: {}", e),
     };
     // println!("{:?}", observation_data);
 
-    let observation: Observation = serde_json::from_str(observation_data.as_str()).expect("could not parse observation json data");
+    let observation: Observation = serde_json::from_str(observation_data.as_str())
+        .expect("could not parse observation json data");
     print!("Current Conditions\n");
 
     match observation.properties.temperature.value {
-        Some(v) => print!("    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
+        Some(v) => print!(
+            "    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n",
+            celsius_to_fahrenheit(v),
+            v
+        ),
         None => (),
     }
     match observation.properties.relativeHumidity.value {
@@ -104,19 +109,35 @@ async fn main() {
         None => (),
     }
     match observation.properties.heatIndex.value {
-        Some(v) => print!("    Heat Index: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
+        Some(v) => print!(
+            "    Heat Index: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n",
+            celsius_to_fahrenheit(v),
+            v
+        ),
         None => (),
     }
     match observation.properties.windChill.value {
-        Some(v) => print!("    Wind Chill: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n", celsius_to_fahrenheit(v), v),
+        Some(v) => print!(
+            "    Wind Chill: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n",
+            celsius_to_fahrenheit(v),
+            v
+        ),
         None => (),
     }
     match observation.properties.windSpeed.value {
-        Some(v) => print!("    Wind Speed: {:.2?} mi/h / {:.2?} km/h\n", kilometers_to_miles(v), v),
+        Some(v) => print!(
+            "    Wind Speed: {:.2?} mi/h / {:.2?} km/h\n",
+            kilometers_to_miles(v),
+            v
+        ),
         None => (),
     }
     match observation.properties.windDirection.value {
-        Some(v) => print!("    Wind Direction: {:.0?}\u{00B0} {}\n", v, degrees_to_direction(v).unwrap()),
+        Some(v) => print!(
+            "    Wind Direction: {:.0?}\u{00B0} {}\n",
+            v,
+            degrees_to_direction(v).unwrap()
+        ),
         None => (),
     }
     match observation.properties.windGust.value {
@@ -136,24 +157,29 @@ async fn main() {
         Err(e) => {
             eprintln!("{}", e);
             std::process::exit(1);
-        },
+        }
     };
 
     print!("Forecast\n");
-    let forecast: Forecast = serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
+    let forecast: Forecast =
+        serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
     let num_periods = 2;
     for (i, period) in forecast.properties.periods.iter().enumerate() {
-        if i >= num_periods { break; }
+        if i >= num_periods {
+            break;
+        }
         print!("    {}: {}\n", period.name, period.detailedForecast);
     }
 }
 
 async fn make_request(url: &str) -> Result<String, reqwest::Error> {
     let client = reqwest::Client::new();
-    let response = match client.get(url)
+    let response = match client
+        .get(url)
         .header(USER_AGENT, "rust-implementation/console")
         .send()
-        .await {
+        .await
+    {
         Ok(r) => r,
         Err(e) => return Err(e),
     };
@@ -167,7 +193,7 @@ async fn make_request(url: &str) -> Result<String, reqwest::Error> {
 
 fn celsius_to_fahrenheit(celsius: f64) -> f64 {
     let ratio: f64 = 9.0 / 5.0;
-    let fahrenheit: f64 = ( celsius * ratio ) + 32.0;
+    let fahrenheit: f64 = (celsius * ratio) + 32.0;
     fahrenheit
 }
 
@@ -210,7 +236,10 @@ fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
         index += 1;
     }
 
-    Err(io::Error::new(io::ErrorKind::InvalidData, format!("could not discern direction from value {:?}", direction)))
+    Err(io::Error::new(
+        io::ErrorKind::InvalidData,
+        format!("could not discern direction from value {:?}", direction),
+    ))
 }
 
 fn kilometers_to_miles(kilometers: f64) -> f64 {
@@ -234,9 +263,7 @@ fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &'static str> {
     }
 
     // include zip data
-    let zip_data: Vec<&str> = include_str!("zip_data.txt")
-        .split('\n')
-        .collect();
+    let zip_data: Vec<&str> = include_str!("zip_data.txt").split('\n').collect();
 
     for line in zip_data.into_iter() {
         if line.starts_with(zip) {
