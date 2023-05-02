@@ -94,61 +94,53 @@ async fn main() {
 
     let observation: Observation = serde_json::from_str(observation_data.as_str())
         .expect("could not parse observation json data");
-    print!("Current Conditions\n");
+    println!("Current Conditions");
 
-    match observation.properties.temperature.value {
-        Some(v) => print!(
-            "    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n",
+    if let Some(v) = observation.properties.temperature.value {
+        println!(
+            "    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C",
             celsius_to_fahrenheit(v),
             v
-        ),
-        None => (),
+        );
     }
-    match observation.properties.relativeHumidity.value {
-        Some(v) => print!("    Humidity: {:.2?}%\n", v),
-        None => (),
+    if let Some(v) = observation.properties.relativeHumidity.value {
+        println!("    Humidity: {:.2?}%", v);
     }
-    match observation.properties.heatIndex.value {
-        Some(v) => print!(
-            "    Heat Index: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n",
+    if let Some(v) = observation.properties.heatIndex.value {
+        println!(
+            "    Heat Index: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C",
             celsius_to_fahrenheit(v),
             v
-        ),
-        None => (),
+        );
     }
-    match observation.properties.windChill.value {
-        Some(v) => print!(
-            "    Wind Chill: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C\n",
+    if let Some(v) = observation.properties.windChill.value {
+        println!(
+            "    Wind Chill: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C",
             celsius_to_fahrenheit(v),
             v
-        ),
-        None => (),
+        );
     }
-    match observation.properties.windSpeed.value {
-        Some(v) => print!(
-            "    Wind Speed: {:.2?} mi/h / {:.2?} km/h\n",
+    if let Some(v) = observation.properties.windSpeed.value {
+        println!(
+            "    Wind Speed: {:.2?} mi/h / {:.2?} km/h",
             kilometers_to_miles(v),
             v
-        ),
-        None => (),
+        );
     }
-    match observation.properties.windDirection.value {
-        Some(v) => print!(
-            "    Wind Direction: {:.0?}\u{00B0} {}\n",
+    if let Some(v) = observation.properties.windDirection.value {
+        println!(
+            "    Wind Direction: {:.0?}\u{00B0} {}",
             v,
             degrees_to_direction(v).unwrap()
-        ),
-        None => (),
+        );
     }
-    match observation.properties.windGust.value {
-        Some(v) => print!("    Wind Gusts: {:?} km/h\n", v),
-        None => (),
+    if let Some(v) = observation.properties.windGust.value {
+        println!("    Wind Gusts: {:?} km/h", v);
     }
-    match observation.properties.barometricPressure.value {
-        Some(v) => print!("    Barometer: {:.0?} mbar\n", pascals_to_millibars(v)),
-        None => (),
+    if let Some(v) = observation.properties.barometricPressure.value {
+        println!("    Barometer: {:.0?} mbar", pascals_to_millibars(v));
     }
-    print!("\n");
+    println!();
 
     // Forecast
     let forecast_url = "https://api.weather.gov/gridpoints/VEF/117,98/forecast";
@@ -160,7 +152,7 @@ async fn main() {
         }
     };
 
-    print!("Forecast\n");
+    println!("Forecast");
     let forecast: Forecast =
         serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
     let num_periods = 2;
@@ -168,7 +160,7 @@ async fn main() {
         if i >= num_periods {
             break;
         }
-        print!("    {}: {}\n", period.name, period.detailedForecast);
+        println!("    {}: {}", period.name, period.detailedForecast);
     }
 }
 
@@ -268,7 +260,7 @@ fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &'static str> {
     for line in zip_data.into_iter() {
         if line.starts_with(zip) {
             // split by comma and return values
-            let line_split: Vec<&str> = line.split(',').into_iter().collect();
+            let line_split: Vec<&str> = line.split(',').collect();
             let (city, state, lat, lon) = (
                 line_split[1],
                 line_split[2],
@@ -279,5 +271,5 @@ fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &'static str> {
             return Ok((lat, lon, city, state));
         }
     }
-    return Err("error");
+    Err("error")
 }
