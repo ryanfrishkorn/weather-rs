@@ -1,6 +1,6 @@
 use reqwest::header::USER_AGENT;
 use serde::Deserialize;
-use std::{include_str, io};
+use std::{env, include_str, io};
 
 #[derive(Debug, Deserialize)]
 struct Forecast {
@@ -34,13 +34,13 @@ struct ForecastPeriod {
     detailedForecast: String,
 }
 
-#[allow(non_snake_case, dead_code)]
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
 struct Observation {
     properties: ObservationProperties,
 }
 
-#[allow(non_snake_case, dead_code)]
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
 struct ObservationProperties {
     temperature: ObservationValue,
@@ -60,41 +60,72 @@ struct ObservationValue {
     value: Option<f64>,
 }
 
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize)]
+struct Points {
+    properties: PointsProperties
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize)]
+struct PointsProperties {
+    forecast: String,
+    observationStations: String,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, Deserialize)]
+struct ObservationStationsGroup {
+    observationStations: Vec<String>,
+}
+
 #[tokio::main]
 async fn main() {
-    let zip_code = "89145".to_string();
+    let mut zip_code = "89145".to_string(); // Vegas default
 
-    let zip_search_result = zip_lookup(&zip_code);
-    match zip_search_result {
-        Ok(v) => println!("result: {:?}", v),
-        Err(e) => {
-            println!("result: {:?}", e);
-            std::process::exit(1);
-        }
+    // args
+    let args = env::args();
+    if let Some(code) = check_single("z", args) {
+        zip_code = code;
     }
+    // println!("zip code: {}", zip_code);
+
+    let zip_search_result = match zip_lookup(&zip_code) {
+        Ok(v) =>  v,
+        Err(e) => {
+            println!("error: {:?}", e);
+            std::process::exit(1);
+        },
+    };
 
     // Locate grid data by lat/lon
     // let latitude: f32 = 36.1744;
     // let longitude: f32 = -115.2721;
-    // let grid_url = format!("https://api.weather.gov/points/{},{}", latitude, longitude);
+    let (latitude, longitude, _city, _state) = zip_search_result;
+    let grid_url = format!("https://api.weather.gov/points/{},{}", latitude, longitude);
 
-    // Specify grid point - this gives raw numerical data
-    // let forecast_raw_url = "https://api.weather.gov/gridpoints/VEF/117,98";
+    let points: Points = match make_request(&grid_url).await {
+        Ok(v) => serde_json::from_str(v.as_str()).expect("could not parse points data"),
+        Err(e) => panic!("error making points request: {}", e),
+    };
+    let forecast_url = points.properties.forecast;
+
+    // Obtain available stations
+    let observation_url: String = match station_lookup(&points.properties.observationStations).await {
+        Some(v) => v,
+        None => panic!("error requesting available stations"),
+    };
 
     // Latest station observation
-    let observation_url = "https://api.weather.gov/stations/KVGT/observations/latest"; /* NLV Airport */
-    // let observation_url = "https://api.weather.gov/stations/KLSV/observations/latest"; /* Nellis AFB */
-    // let observation_url = "https://api.weather.gov/stations/RRKN2/observations/latest"; /* Red Rock */
-    // let observation_url = "https://api.weather.gov/stations/CMP10/observations/latest"; /* Henderson */
-    let observation_data = match make_request(observation_url).await {
-        Ok(d) => d,
+    let observation_data = match make_request(&observation_url).await {
+       Ok(d) => d,
         Err(e) => panic!("error requesting observation data: {}", e),
     };
     // println!("{:?}", observation_data);
 
     let observation: Observation = serde_json::from_str(observation_data.as_str())
         .expect("could not parse observation json data");
-    println!("Current Conditions");
+    println!("Current Conditions {:?}", zip_search_result);
 
     if let Some(v) = observation.properties.temperature.value {
         println!(
@@ -143,8 +174,8 @@ async fn main() {
     println!();
 
     // Forecast
-    let forecast_url = "https://api.weather.gov/gridpoints/VEF/117,98/forecast";
-    let forecast_data = match make_request(forecast_url).await {
+    // sample forecast: https://api.weather.gov/gridpoints/VEF/117,98/forecast
+    let forecast_data = match make_request(&forecast_url).await {
         Ok(v) => v,
         Err(e) => {
             eprintln!("{}", e);
@@ -152,7 +183,7 @@ async fn main() {
         }
     };
 
-    println!("Forecast");
+    println!("Forecast ({})", forecast_url);
     let forecast: Forecast =
         serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
     let num_periods = 2;
@@ -187,6 +218,19 @@ fn celsius_to_fahrenheit(celsius: f64) -> f64 {
     let ratio: f64 = 9.0 / 5.0;
     let fahrenheit: f64 = (celsius * ratio) + 32.0;
     fahrenheit
+}
+
+fn check_single(needle: &str, args: env::Args) -> Option<String> {
+    let mut capture_next = false;
+    for a in args {
+        if capture_next {
+            return Some(a);
+        }
+        if a == format!("{}{}", "-", needle) {
+            capture_next = true;
+        }
+    }
+    None
 }
 
 fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
@@ -248,7 +292,20 @@ fn pascals_to_millibars(pascals: f64) -> f64 {
     millibars.trunc()
 }
 
-fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &'static str> {
+async fn station_lookup(stations_url: &str) -> Option<String> {
+    let stations_data: ObservationStationsGroup = match make_request(stations_url).await {
+        Ok(v) => serde_json::from_str(v.as_str()).expect("could not parse points data"),
+        Err(e) => panic!("error requesting observation data: {}", e),
+    };
+
+    if stations_data.observationStations.is_empty() {
+        return None;
+    }
+    // example station: https://api.weather.gov/stations/KVGT/observations/latest
+    Some(format!("{}{}", stations_data.observationStations[0].to_owned(), "/observations/latest"))
+}
+
+fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &str> {
     // verify 5-digit code
     if zip.len() != 5 {
         return Err("zip code must be five digits");

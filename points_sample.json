@@ -1,0 +1,94 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/36.1677,-115.2679",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -115.2679,
+            36.167700000000004
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/36.1677,-115.2679",
+        "@type": "wx:Point",
+        "cwa": "VEF",
+        "forecastOffice": "https://api.weather.gov/offices/VEF",
+        "gridId": "VEF",
+        "gridX": 118,
+        "gridY": 99,
+        "forecast": "https://api.weather.gov/gridpoints/VEF/118,99/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/VEF/118,99/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/VEF/118,99",
+        "observationStations": "https://api.weather.gov/gridpoints/VEF/118,99/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -115.260082,
+                    36.229213999999999
+                ]
+            },
+            "properties": {
+                "city": "Las Vegas",
+                "state": "NV",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 6875.9347355044001
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 185
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/NVZ020",
+        "county": "https://api.weather.gov/zones/county/NVC003",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/NVZ465",
+        "timeZone": "America/Los_Angeles",
+        "radarStation": "KESX"
+    }
+}
