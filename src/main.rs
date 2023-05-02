@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, include_str};
 use reqwest::header::USER_AGENT;
 use serde::{Deserialize};
 
@@ -62,6 +62,17 @@ struct ObservationValue {
 
 #[tokio::main]
 async fn main() {
+    let zip_code = "89145".to_string();
+
+    let zip_search_result = zip_lookup(&zip_code);
+    match zip_search_result {
+        Ok(v) => println!("result: {:?}", v),
+        Err(e) => {
+            println!("result: {:?}", e);
+            std::process::exit(1);
+        },
+    }
+
     // Locate grid data by lat/lon
     // let latitude: f32 = 36.1744;
     // let longitude: f32 = -115.2721;
@@ -214,4 +225,32 @@ fn kilometers_to_miles(kilometers: f64) -> f64 {
 fn pascals_to_millibars(pascals: f64) -> f64 {
     let millibars = pascals / 100.0;
     millibars.trunc()
+}
+
+fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &'static str> {
+    // verify 5-digit code
+    if zip.len() != 5 {
+        return Err("zip code must be five digits");
+    }
+
+    // include zip data
+    let zip_data: Vec<&str> = include_str!("zip_data.txt")
+        .split('\n')
+        .collect();
+
+    for line in zip_data.into_iter() {
+        if line.starts_with(zip) {
+            // split by comma and return values
+            let line_split: Vec<&str> = line.split(',').into_iter().collect();
+            let (city, state, lat, lon) = (
+                line_split[1],
+                line_split[2],
+                line_split[3].parse::<f64>().unwrap(),
+                line_split[4].parse::<f64>().unwrap(),
+            );
+
+            return Ok((lat, lon, city, state));
+        }
+    }
+    return Err("error");
 }
