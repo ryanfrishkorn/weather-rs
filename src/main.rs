@@ -82,13 +82,15 @@ struct ObservationStationsGroup {
 #[tokio::main]
 async fn main() {
     let mut zip_code = "89145".to_string(); // Vegas default
+    let mut forecast_periods: usize = 3;
 
     // args
-    let args = env::args();
-    if let Some(code) = check_single("z", args) {
+    if let Some(code) = check_single("z", env::args()) {
         zip_code = code;
     }
-    // println!("zip code: {}", zip_code);
+    if let Some(n) = check_single("p", env::args()) {
+        forecast_periods = n.parse::<usize>().expect("error parsing number of forecast periods");
+    }
 
     let zip_search_result = match zip_lookup(&zip_code) {
         Ok(v) =>  v,
@@ -186,9 +188,8 @@ async fn main() {
     println!("Forecast ({})", forecast_url);
     let forecast: Forecast =
         serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
-    let num_periods = 2;
     for (i, period) in forecast.properties.periods.iter().enumerate() {
-        if i >= num_periods {
+        if i >= forecast_periods {
             break;
         }
         println!("    {}: {}", period.name, period.detailedForecast);
