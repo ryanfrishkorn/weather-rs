@@ -81,10 +81,10 @@ struct ObservationStationsGroup {
 
 #[tokio::main]
 async fn main() {
-    let mut zip_code = "89145".to_string(); // Vegas default
+    let mut zip_code = env::var("WEATHER_RS_ZIP").unwrap_or("89145".to_string()); // Vegas default
     let mut forecast_periods: usize = 3;
 
-    // args
+    // args take precedence over env
     if let Some(code) = check_single("z", env::args()) {
         zip_code = code;
     }

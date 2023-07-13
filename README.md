@@ -18,8 +18,7 @@ cargo install --path .
 ```
 
 ## Usage
-There are very minimal options currently. You can specify a zip code this way:
-`weather-rs -z 89145`
+There are very minimal options currently. You can specify a zip code with `-z`
 
 ```
 $ weather-rs -z 89145
@@ -35,4 +34,10 @@ Forecast (https://api.weather.gov/gridpoints/VEF/118,99/forecast)
     This Afternoon: Sunny, with a high near 107. South southwest wind around 13 mph, with gusts as high as 18 mph.
     Tonight: Mostly clear. Low around 84, with temperatures rising to around 86 overnight. West wind 6 to 13 mph, with gusts as high as 18 mph.
     Friday: Sunny, with a high near 110. East northeast wind 5 to 9 mph.
+```
+
+The zipcode can also be specified by setting `WEATHER_RS_ZIP` in your shell startup file. For bash, this means
+`.bash_profile` or `.bashrc`
+```
+export WEATHER_RS_ZIP=89145
 ```
