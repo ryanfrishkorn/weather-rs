@@ -1,6 +1,13 @@
-use std::io;
 use reqwest::header::USER_AGENT;
+use std::error::Error;
 use serde::Deserialize;
+use thiserror::Error as ThisError;
+
+#[derive(Debug, ThisError)]
+pub enum ProgramError {
+    #[error("General program error")]
+    General(String),
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Forecast {
@@ -79,6 +86,7 @@ struct ObservationStationsGroup {
     observationStations: Vec<String>,
 }
 
+/// Converts kilometer units to miles.
 pub fn kilometers_to_miles(kilometers: f64) -> f64 {
     if kilometers == 0.0 {
         return 0.0;
@@ -88,15 +96,17 @@ pub fn kilometers_to_miles(kilometers: f64) -> f64 {
     meters / mile_in_meters
 }
 
+/// Converts pascal units to millibars.
 pub fn pascals_to_millibars(pascals: f64) -> f64 {
     let millibars = pascals / 100.0;
     millibars.trunc()
 }
 
-pub fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &str> {
+/// Looks up `zip` from zip code data and returns a tuple containing (lat, lon, city, state).
+pub fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), Box<dyn Error>> {
     // verify 5-digit code
     if zip.len() != 5 {
-        return Err("zip code must be five digits");
+        return Err(Box::new(ProgramError::General("zip code must be five digits".to_string())));
     }
 
     // include zip data
@@ -116,27 +126,29 @@ pub fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &str> {
             return Ok((lat, lon, city, state));
         }
     }
-    Err("error")
+    Err(Box::new(ProgramError::General(format!("zip code {} could not be located", zip))))
 }
 
-pub async fn station_lookup(stations_url: &str) -> Option<String> {
+/// Makes a request to NWS to determine the proper endpoint to query for observation data.
+pub async fn station_lookup(stations_url: &str) -> Result<String, Box<dyn Error>> {
     let stations_data: ObservationStationsGroup = match make_request(stations_url).await {
         Ok(v) => serde_json::from_str(v.as_str()).expect("could not parse points data"),
-        Err(e) => panic!("error requesting observation data: {}", e),
+        Err(e) => return Err(Box::new(ProgramError::General(format!("error requesting observation data: {}", e)))),
     };
 
     if stations_data.observationStations.is_empty() {
-        return None;
+        return Err(Box::new(ProgramError::General("observationStations field is empty.".to_string())));
     }
     // example station: https://api.weather.gov/stations/KVGT/observations/latest
-    Some(format!(
+    Ok(format!(
         "{}{}",
         stations_data.observationStations[0].to_owned(),
         "/observations/latest"
     ))
 }
 
-pub async fn make_request(url: &str) -> Result<String, reqwest::Error> {
+/// Make a request to `url` and return full body text.
+pub async fn make_request(url: &str) -> Result<String, Box<dyn Error>> {
     let client = reqwest::Client::new();
     let response = match client
         .get(url)
@@ -145,18 +157,18 @@ pub async fn make_request(url: &str) -> Result<String, reqwest::Error> {
         .await
     {
         Ok(r) => r,
-        Err(e) => return Err(e),
+        Err(e) => return Err(Box::new(e)),
     };
 
     let content = match response.text().await {
         Ok(t) => t,
-        Err(e) => return Err(e),
+        Err(e) => return Err(Box::new(e)),
     };
     Ok(content)
 }
 
-pub fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
-    // Human-readable directions to be referenced by index
+/// Returns a human-readable direction from the provided degrees of direction.
+pub fn degrees_to_direction(direction: f64) -> Result<String, Box<dyn Error>> {
     let phrase: Vec<&str> = vec![
         "North",
         "North Northeast",
@@ -193,13 +205,10 @@ pub fn degrees_to_direction(direction: f64) -> Result<String, io::Error> {
         notch += NOTCH_SIZE;
         index += 1;
     }
-
-    Err(io::Error::new(
-        io::ErrorKind::InvalidData,
-        format!("could not discern direction from value {:?}", direction),
-    ))
+    Err(Box::new(ProgramError::General(format!("Could not discern direction from value {:?}", direction))))
 }
 
+/// Converts celsius units to fahrenheit.
 pub fn celsius_to_fahrenheit(celsius: f64) -> f64 {
     let ratio: f64 = 9.0 / 5.0;
     let fahrenheit: f64 = (celsius * ratio) + 32.0;

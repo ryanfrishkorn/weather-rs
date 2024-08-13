@@ -1,4 +1,5 @@
 use std::env;
+use std::error::Error;
 use weather_rs::{
     celsius_to_fahrenheit, degrees_to_direction, kilometers_to_miles, make_request,
     pascals_to_millibars, station_lookup, zip_lookup,
@@ -23,7 +24,7 @@ fn usage(code: i32) {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result <(), Box<dyn Error>> {
     let mut zip_code = env::var("WEATHER_RS_ZIP").unwrap_or("89145".to_string()); // Vegas default
     let mut forecast_periods: usize = 3;
 
@@ -64,23 +65,48 @@ async fn main() {
     let forecast_url = points.properties.forecast;
 
     // Obtain available stations
-    let observation_url: String = match station_lookup(&points.properties.observationStations).await
-    {
-        Some(v) => v,
-        None => panic!("error requesting available stations"),
-    };
+    let observation_url = station_lookup(&points.properties.observationStations).await?;
 
     // Latest station observation
-    let observation_data = match make_request(&observation_url).await {
-        Ok(d) => d,
-        Err(e) => panic!("error requesting observation data: {}", e),
-    };
+    let observation_data = make_request(&observation_url).await?;
     // println!("{:?}", observation_data);
 
     let observation: Observation = serde_json::from_str(observation_data.as_str())
         .expect("could not parse observation json data");
-    println!("Current Conditions {:?}", zip_search_result);
 
+    println!("Current Conditions {:?}", zip_search_result);
+    print_conditions(&observation);
+
+    // Forecast
+    // sample forecast: https://api.weather.gov/gridpoints/VEF/117,98/forecast
+    let forecast_data = match make_request(&forecast_url).await {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let forecast: Forecast =
+        serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
+    println!("Forecast ({})", forecast_url);
+    print_forecast(&forecast, forecast_periods);
+
+    Ok(())
+}
+
+/// Print the forecast.
+fn print_forecast(forecast: &Forecast, periods: usize) {
+    for (i, period) in forecast.properties.periods.iter().enumerate() {
+        if i >= periods {
+            break;
+        }
+        println!("    {}: {}", period.name, period.detailedForecast);
+    }
+}
+
+/// Print the conditions.
+fn print_conditions(observation: &Observation) {
     if let Some(v) = observation.properties.temperature.value {
         println!(
             "    Temperature: {:.2?} \u{00B0}F / {:.2?} \u{00B0}C",
@@ -126,28 +152,9 @@ async fn main() {
         println!("    Barometer: {:.0?} mbar", pascals_to_millibars(v));
     }
     println!();
-
-    // Forecast
-    // sample forecast: https://api.weather.gov/gridpoints/VEF/117,98/forecast
-    let forecast_data = match make_request(&forecast_url).await {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("{}", e);
-            std::process::exit(1);
-        }
-    };
-
-    println!("Forecast ({})", forecast_url);
-    let forecast: Forecast =
-        serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
-    for (i, period) in forecast.properties.periods.iter().enumerate() {
-        if i >= forecast_periods {
-            break;
-        }
-        println!("    {}: {}", period.name, period.detailedForecast);
-    }
 }
 
+/// Check for the next value of an expected argument `needle`.
 fn check_single(needle: &str, args: env::Args) -> Option<String> {
     let mut capture_next = false;
     for a in args {
