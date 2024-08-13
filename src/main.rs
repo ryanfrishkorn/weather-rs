@@ -14,7 +14,7 @@ fn usage(code: i32) {
     let usage_string = format!("usage: {} [options]", program_name);
     let options = [
         usage_string.as_str(),
-        "--help         Show this help information",
+        "--help, -h     Show this help information",
         " -z <ZIP_CODE> Use zip code for location",
         " -p <NUM>      Show number of forecast periods",
     ];
@@ -28,7 +28,7 @@ async fn main() -> Result <(), Box<dyn Error>> {
     let mut forecast_periods: usize = 3;
 
     for arg in env::args() {
-        if arg == "--help" {
+        if arg == "--help" || arg == "-h" {
             usage(1);
         }
     }
