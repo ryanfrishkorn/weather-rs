@@ -139,3 +139,87 @@ pub fn celsius_to_fahrenheit(celsius: f64) -> f64 {
     let fahrenheit: f64 = (celsius * ratio) + 32.0;
     fahrenheit
 }
+
+#[test]
+fn check_zip_lookup() -> Result<(), Box<dyn Error>> {
+    const ZIPS: &[&str] = &["89145", "44256"];
+    const EXPECTED: &[(f64, f64, &str, &str)] = &[
+        (36.167731, -115.26791, "Las Vegas", "NV"),
+        (41.139849, -81.85646, "Medina", "OH"),
+    ];
+
+    for (i, zip) in ZIPS.iter().enumerate() {
+        let result = zip_lookup(zip)?;
+        assert_eq!(EXPECTED[i], result);
+    }
+
+    Ok(())
+}
+
+#[test]
+fn check_celsius_to_fahrenheit() -> Result<(), Box<dyn Error>> {
+    const DATA: &[(f64, f64)] = &[
+        (45.0, 113.0),
+        (32.0, 89.6),
+        (0.0, 32.0),
+        (-32.0, -25.6),
+    ];
+
+    for (given, expected) in DATA {
+        let result = celsius_to_fahrenheit(*given);
+        // eprintln!("given: {} result: {}", given, result);
+        assert_eq!(result, *expected);
+    }
+    Ok(())
+}
+
+#[test]
+// pub fn degrees_to_direction(direction: f64) -> Result<String, Box<dyn Error>> {
+fn check_degrees_to_direction() -> Result<(), Box<dyn Error>> {
+    const DATA: &[(f64, &str)] = &[
+        (0.0, "North"),
+        (90.0, "East"),
+        (180.0, "South"),
+        (270.0, "West"),
+    ];
+
+    for (degrees, direction) in DATA {
+        let result = degrees_to_direction(*degrees)?;
+        // eprintln!("degrees: {} result: {}", degrees, result);
+        assert_eq!(&result, *direction);
+    }
+    Ok(())
+}
+
+#[test]
+// pub fn kilometers_to_miles(kilometers: f64) -> f64 {
+fn check_kilometers_to_miles() -> Result<(), Box<dyn Error>> {
+    const DATA: &[(f64, f64)] = &[
+        (100.0, 62.13712),
+        (60.0, 37.28227),
+        (30.0, 18.64114),
+    ];
+
+    for (km, m) in DATA {
+        let result = kilometers_to_miles(*km);
+        // eprintln!("km: {} m: {} result: {}", km, m, result);
+        assert_eq!(result.trunc(), m.trunc());
+    }
+    Ok(())
+}
+
+#[test]
+// pub fn pascals_to_millibars(pascals: f64) -> f64 {
+fn check_pascals_to_millibars() -> Result<(), Box<dyn Error>> {
+    const DATA: &[(f64, f64)] = &[
+        (800.0, 8.0),
+        (300.0, 3.0),
+        (200.0, 2.0),
+    ];
+
+    for (pascals, expected) in DATA {
+        let result = pascals_to_millibars(*pascals);
+        assert_eq!(result.trunc(), expected.trunc());
+    }
+    Ok(())
+}
