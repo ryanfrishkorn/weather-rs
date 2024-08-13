@@ -10,7 +10,7 @@ struct Forecast {
 #[allow(non_snake_case, dead_code)]
 #[derive(Debug, Deserialize)]
 struct ForecastProperties {
-    updated: String,
+    // updated: String,
     forecastGenerator: String,
     generatedAt: String,
     updateTime: String,
@@ -63,7 +63,7 @@ struct ObservationValue {
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
 struct Points {
-    properties: PointsProperties
+    properties: PointsProperties,
 }
 
 #[allow(non_snake_case)]
@@ -89,15 +89,17 @@ async fn main() {
         zip_code = code;
     }
     if let Some(n) = check_single("p", env::args()) {
-        forecast_periods = n.parse::<usize>().expect("error parsing number of forecast periods");
+        forecast_periods = n
+            .parse::<usize>()
+            .expect("error parsing number of forecast periods");
     }
 
     let zip_search_result = match zip_lookup(&zip_code) {
-        Ok(v) =>  v,
+        Ok(v) => v,
         Err(e) => {
             println!("error: {:?}", e);
             std::process::exit(1);
-        },
+        }
     };
 
     // Locate grid data by lat/lon
@@ -113,14 +115,15 @@ async fn main() {
     let forecast_url = points.properties.forecast;
 
     // Obtain available stations
-    let observation_url: String = match station_lookup(&points.properties.observationStations).await {
+    let observation_url: String = match station_lookup(&points.properties.observationStations).await
+    {
         Some(v) => v,
         None => panic!("error requesting available stations"),
     };
 
     // Latest station observation
     let observation_data = match make_request(&observation_url).await {
-       Ok(d) => d,
+        Ok(d) => d,
         Err(e) => panic!("error requesting observation data: {}", e),
     };
     // println!("{:?}", observation_data);
@@ -303,7 +306,11 @@ async fn station_lookup(stations_url: &str) -> Option<String> {
         return None;
     }
     // example station: https://api.weather.gov/stations/KVGT/observations/latest
-    Some(format!("{}{}", stations_data.observationStations[0].to_owned(), "/observations/latest"))
+    Some(format!(
+        "{}{}",
+        stations_data.observationStations[0].to_owned(),
+        "/observations/latest"
+    ))
 }
 
 fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), &str> {
