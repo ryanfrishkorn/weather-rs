@@ -1,10 +1,9 @@
+mod weather_data;
+
 use std::env;
 use std::error::Error;
-use weather_rs::{
-    celsius_to_fahrenheit, degrees_to_direction, kilometers_to_miles, make_request,
-    pascals_to_millibars, station_lookup, zip_lookup,
-};
-use weather_rs::{Forecast, Observation, Points};
+use weather_rs::*;
+use weather_data::{Forecast, Observation, Points};
 
 /// Display program usage summary and exit.
 fn usage(code: i32) {
@@ -95,14 +94,18 @@ async fn main() -> Result <(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Print the forecast.
-fn print_forecast(forecast: &Forecast, periods: usize) {
-    for (i, period) in forecast.properties.periods.iter().enumerate() {
-        if i >= periods {
-            break;
+/// Check for the next value of an expected argument `needle`.
+fn check_single(needle: &str, args: env::Args) -> Option<String> {
+    let mut capture_next = false;
+    for a in args {
+        if capture_next {
+            return Some(a);
         }
-        println!("    {}: {}", period.name, period.detailedForecast);
+        if a == format!("{}{}", "-", needle) {
+            capture_next = true;
+        }
     }
+    None
 }
 
 /// Print the conditions.
@@ -154,16 +157,12 @@ fn print_conditions(observation: &Observation) {
     println!();
 }
 
-/// Check for the next value of an expected argument `needle`.
-fn check_single(needle: &str, args: env::Args) -> Option<String> {
-    let mut capture_next = false;
-    for a in args {
-        if capture_next {
-            return Some(a);
+/// Print the forecast.
+fn print_forecast(forecast: &Forecast, periods: usize) {
+    for (i, period) in forecast.properties.periods.iter().enumerate() {
+        if i >= periods {
+            break;
         }
-        if a == format!("{}{}", "-", needle) {
-            capture_next = true;
-        }
+        println!("    {}: {}", period.name, period.detailedForecast);
     }
-    None
 }
