@@ -77,21 +77,13 @@ pub async fn make_request(url: &str) -> Result<String, Box<dyn Error>> {
     let timeout = 3000; // milliseconds
     let user_agent = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
     let client = reqwest::Client::builder().connect_timeout(std::time::Duration::from_millis(timeout)).user_agent(user_agent).build()?;
-    let response = match client
+    let response = client
         .get(url)
         .header(USER_AGENT, "rust-implementation/console")
         .send()
-        .await
-    {
-        Ok(r) => r,
-        Err(e) => return Err(Box::new(e)),
-    };
+        .await?;
 
-    let content = match response.text().await {
-        Ok(t) => t,
-        Err(e) => return Err(Box::new(e)),
-    };
-    Ok(content)
+    Ok(response.text().await?)
 }
 
 /// Returns a human-readable direction from the provided degrees of direction.
