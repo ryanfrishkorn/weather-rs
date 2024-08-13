@@ -177,15 +177,52 @@ fn check_celsius_to_fahrenheit() -> Result<(), Box<dyn Error>> {
 // pub fn degrees_to_direction(direction: f64) -> Result<String, Box<dyn Error>> {
 fn check_degrees_to_direction() -> Result<(), Box<dyn Error>> {
     const DATA: &[(f64, &str)] = &[
-        (0.0, "North"),
-        (90.0, "East"),
-        (180.0, "South"),
-        (270.0, "West"),
+        (0.0, "North"), // exact
+        (11.0, "North"),
+        (12.0, "North Northeast"),
+        (33.0, "North Northeast"),
+        (34.0, "Northeast"),
+        (45.0, "Northeast"), // exact
+        (56.0, "Northeast"),
+        (57.0, "East Northeast"),
+        (78.0, "East Northeast"),
+        (79.0, "East"),
+        (90.0, "East"), // exact
+        (101.0, "East"),
+        (102.0, "East Southeast"),
+        (123.0, "East Southeast"),
+        (124.0, "Southeast"),
+        (135.0, "Southeast"), // exact
+        (146.0, "Southeast"),
+        (147.0, "South Southeast"),
+        (168.0, "South Southeast"),
+        (169.0, "South"),
+        (180.0, "South"), // exact
+        (191.0, "South"),
+        (192.0, "South Southwest"),
+        (213.0, "South Southwest"),
+        (214.0, "Southwest"),
+        (225.0, "Southwest"), // exact
+        (236.0, "Southwest"),
+        (237.0, "West Southwest"),
+        (258.0, "West Southwest"),
+        (259.0, "West"),
+        (270.0, "West"), // exact
+        (281.0, "West"),
+        (282.0, "West Northwest"),
+        (303.0, "West Northwest"),
+        (304.0, "Northwest"),
+        (315.0, "Northwest"), // exact
+        (326.0, "Northwest"),
+        (327.0, "North Northwest"),
+        (348.0, "North Northwest"),
+        (349.0, "North"),
+        (360.0, "North"), // exact
     ];
 
     for (degrees, direction) in DATA {
         let result = degrees_to_direction(*degrees)?;
-        // eprintln!("degrees: {} result: {}", degrees, result);
+        eprintln!("degrees: {:3} direction: {:15} result: {}", degrees, direction, result);
         assert_eq!(&result, *direction);
     }
     Ok(())
