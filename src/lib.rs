@@ -11,6 +11,18 @@ pub enum ProgramError {
     General(String),
 }
 
+impl ProgramError {
+    /// Returns a General error with provided string.
+    pub fn general(msg: &str) -> ProgramError {
+        ProgramError::General(msg.to_string())
+    }
+
+    /// Returns a `Box` General error with provided string.
+    pub fn general_box(msg: &str) -> Box<dyn Error> {
+        Box::new(ProgramError::general(msg))
+    }
+}
+
 /// Converts kilometer units to miles.
 pub fn kilometers_to_miles(kilometers: f64) -> f64 {
     if kilometers == 0.0 {
@@ -31,7 +43,7 @@ pub fn pascals_to_millibars(pascals: f64) -> f64 {
 pub fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), Box<dyn Error>> {
     // verify 5-digit code
     if zip.len() != 5 {
-        return Err(Box::new(ProgramError::General("zip code must be five digits".to_string())));
+        return Err(ProgramError::general_box("zip code must be five digits."));
     }
 
     // include zip data
@@ -51,18 +63,18 @@ pub fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), Box<dyn Error>> {
             return Ok((lat, lon, city, state));
         }
     }
-    Err(Box::new(ProgramError::General(format!("zip code {} could not be located", zip))))
+    Err(ProgramError::general_box(&format!("zip code {zip} could not be located")))
 }
 
 /// Makes a request to NWS to determine the proper endpoint to query for observation data.
 pub async fn station_lookup(stations_url: &str) -> Result<String, Box<dyn Error>> {
     let stations_data: ObservationStationsGroup = match make_request(stations_url).await {
         Ok(v) => serde_json::from_str(v.as_str()).expect("could not parse points data"),
-        Err(e) => return Err(Box::new(ProgramError::General(format!("error requesting observation data: {}", e)))),
+        Err(e) => return Err(ProgramError::general_box(&format!("error requesting observation data: {e}"))),
     };
 
     if stations_data.observationStations.is_empty() {
-        return Err(Box::new(ProgramError::General("observationStations field is empty.".to_string())));
+        return Err(ProgramError::general_box("observationStations field is empty."));
     }
     // example station: https://api.weather.gov/stations/KVGT/observations/latest
     Ok(format!(
@@ -124,7 +136,7 @@ pub fn degrees_to_direction(direction: f64) -> Result<String, Box<dyn Error>> {
         notch += NOTCH_SIZE;
         index += 1;
     }
-    Err(Box::new(ProgramError::General(format!("Could not discern direction from value {:?}", direction))))
+    Err(ProgramError::general_box(&format!("Could not discern direction from value {direction}")))
 }
 
 /// Converts celsius units to fahrenheit.

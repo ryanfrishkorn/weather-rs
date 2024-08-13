@@ -39,8 +39,7 @@ async fn main() -> Result <(), Box<dyn Error>> {
     }
     if let Some(n) = check_single("p", env::args()) {
         forecast_periods = n
-            .parse::<usize>()
-            .expect("error parsing number of forecast periods");
+            .parse::<usize>()?;
     }
 
     let zip_search_result = match zip_lookup(&zip_code) {
@@ -58,7 +57,7 @@ async fn main() -> Result <(), Box<dyn Error>> {
     let grid_url = format!("https://api.weather.gov/points/{},{}", latitude, longitude);
 
     let points: Points = match make_request(&grid_url).await {
-        Ok(v) => serde_json::from_str(v.as_str()).expect("could not parse points data"),
+        Ok(v) => serde_json::from_str(v.as_str())?,
         Err(e) => panic!("error making points request: {}", e),
     };
     let forecast_url = points.properties.forecast;
@@ -70,8 +69,7 @@ async fn main() -> Result <(), Box<dyn Error>> {
     let observation_data = make_request(&observation_url).await?;
     // println!("{:?}", observation_data);
 
-    let observation: Observation = serde_json::from_str(observation_data.as_str())
-        .expect("could not parse observation json data");
+    let observation: Observation = serde_json::from_str(observation_data.as_str())?;
 
     println!("Current Conditions {:?}", zip_search_result);
     print_conditions(&observation);
@@ -86,8 +84,7 @@ async fn main() -> Result <(), Box<dyn Error>> {
         }
     };
 
-    let forecast: Forecast =
-        serde_json::from_str(forecast_data.as_str()).expect("could not parse forecast json data");
+    let forecast: Forecast = serde_json::from_str(forecast_data.as_str())?;
     println!("Forecast ({})", forecast_url);
     print_forecast(&forecast, forecast_periods);
 
