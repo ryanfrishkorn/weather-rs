@@ -74,7 +74,9 @@ pub async fn station_lookup(stations_url: &str) -> Result<String, Box<dyn Error>
 
 /// Make a request to `url` and return full body text.
 pub async fn make_request(url: &str) -> Result<String, Box<dyn Error>> {
-    let client = reqwest::Client::new();
+    let timeout = 3000; // milliseconds
+    let user_agent = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
+    let client = reqwest::Client::builder().connect_timeout(std::time::Duration::from_millis(timeout)).user_agent(user_agent).build()?;
     let response = match client
         .get(url)
         .header(USER_AGENT, "rust-implementation/console")
