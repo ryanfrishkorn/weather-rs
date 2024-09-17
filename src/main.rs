@@ -2,8 +2,8 @@ mod weather_data;
 
 use std::env;
 use std::error::Error;
-use weather_rs::*;
 use weather_data::{Forecast, Observation, Points};
+use weather_rs::*;
 
 /// Display program usage summary and exit.
 fn usage(code: i32) {
@@ -23,7 +23,7 @@ fn usage(code: i32) {
 }
 
 #[tokio::main]
-async fn main() -> Result <(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error>> {
     let mut zip_code = env::var("WEATHER_RS_ZIP").unwrap_or("89145".to_string()); // Vegas default
     let mut forecast_periods: usize = 3;
 
@@ -38,8 +38,7 @@ async fn main() -> Result <(), Box<dyn Error>> {
         zip_code = code;
     }
     if let Some(n) = check_single("p", env::args()) {
-        forecast_periods = n
-            .parse::<usize>()?;
+        forecast_periods = n.parse::<usize>()?;
     }
 
     let zip_search_result = match zip_lookup(&zip_code) {

@@ -50,6 +50,10 @@ pub fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), Box<dyn Error>> {
     let zip_data: Vec<&str> = include_str!("zip_data.txt").split('\n').collect();
 
     for line in zip_data.into_iter() {
+        // skip comments
+        if line.starts_with('#') {
+            continue;
+        }
         if line.starts_with(zip) {
             // split by comma and return values
             let line_split: Vec<&str> = line.split(',').collect();
@@ -60,21 +64,30 @@ pub fn zip_lookup(zip: &str) -> Result<(f64, f64, &str, &str), Box<dyn Error>> {
                 line_split[4].parse::<f64>().unwrap(),
             );
 
+            // eprintln!("DEBUG lat: {lat}, lon: {lon}, city: {city}, state: {state}");
             return Ok((lat, lon, city, state));
         }
     }
-    Err(ProgramError::general_box(&format!("zip code {zip} could not be located")))
+    Err(ProgramError::general_box(&format!(
+        "zip code {zip} could not be located"
+    )))
 }
 
 /// Makes a request to NWS to determine the proper endpoint to query for observation data.
 pub async fn station_lookup(stations_url: &str) -> Result<String, Box<dyn Error>> {
     let stations_data: ObservationStationsGroup = match make_request(stations_url).await {
         Ok(v) => serde_json::from_str(v.as_str()).expect("could not parse points data"),
-        Err(e) => return Err(ProgramError::general_box(&format!("error requesting observation data: {e}"))),
+        Err(e) => {
+            return Err(ProgramError::general_box(&format!(
+                "error requesting observation data: {e}"
+            )))
+        }
     };
 
     if stations_data.observationStations.is_empty() {
-        return Err(ProgramError::general_box("observationStations field is empty."));
+        return Err(ProgramError::general_box(
+            "observationStations field is empty.",
+        ));
     }
     // example station: https://api.weather.gov/stations/KVGT/observations/latest
     Ok(format!(
@@ -88,7 +101,10 @@ pub async fn station_lookup(stations_url: &str) -> Result<String, Box<dyn Error>
 pub async fn make_request(url: &str) -> Result<String, Box<dyn Error>> {
     let timeout = 3000; // milliseconds
     let user_agent = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
-    let client = reqwest::Client::builder().connect_timeout(std::time::Duration::from_millis(timeout)).user_agent(user_agent).build()?;
+    let client = reqwest::Client::builder()
+        .connect_timeout(std::time::Duration::from_millis(timeout))
+        .user_agent(user_agent)
+        .build()?;
     let response = client
         .get(url)
         .header(USER_AGENT, "rust-implementation/console")
@@ -136,7 +152,9 @@ pub fn degrees_to_direction(direction: f64) -> Result<String, Box<dyn Error>> {
         notch += NOTCH_SIZE;
         index += 1;
     }
-    Err(ProgramError::general_box(&format!("Could not discern direction from value {direction}")))
+    Err(ProgramError::general_box(&format!(
+        "Could not discern direction from value {direction}"
+    )))
 }
 
 /// Converts celsius units to fahrenheit.
@@ -164,12 +182,7 @@ fn check_zip_lookup() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn check_celsius_to_fahrenheit() -> Result<(), Box<dyn Error>> {
-    const DATA: &[(f64, f64)] = &[
-        (45.0, 113.0),
-        (32.0, 89.6),
-        (0.0, 32.0),
-        (-32.0, -25.6),
-    ];
+    const DATA: &[(f64, f64)] = &[(45.0, 113.0), (32.0, 89.6), (0.0, 32.0), (-32.0, -25.6)];
 
     for (given, expected) in DATA {
         let result = celsius_to_fahrenheit(*given);
@@ -228,7 +241,10 @@ fn check_degrees_to_direction() -> Result<(), Box<dyn Error>> {
 
     for (degrees, direction) in DATA {
         let result = degrees_to_direction(*degrees)?;
-        eprintln!("degrees: {:3} direction: {:15} result: {}", degrees, direction, result);
+        eprintln!(
+            "degrees: {:3} direction: {:15} result: {}",
+            degrees, direction, result
+        );
         assert_eq!(&result, *direction);
     }
     Ok(())
@@ -237,11 +253,7 @@ fn check_degrees_to_direction() -> Result<(), Box<dyn Error>> {
 #[test]
 // pub fn kilometers_to_miles(kilometers: f64) -> f64 {
 fn check_kilometers_to_miles() -> Result<(), Box<dyn Error>> {
-    const DATA: &[(f64, f64)] = &[
-        (100.0, 62.13712),
-        (60.0, 37.28227),
-        (30.0, 18.64114),
-    ];
+    const DATA: &[(f64, f64)] = &[(100.0, 62.13712), (60.0, 37.28227), (30.0, 18.64114)];
 
     for (km, m) in DATA {
         let result = kilometers_to_miles(*km);
@@ -254,11 +266,7 @@ fn check_kilometers_to_miles() -> Result<(), Box<dyn Error>> {
 #[test]
 // pub fn pascals_to_millibars(pascals: f64) -> f64 {
 fn check_pascals_to_millibars() -> Result<(), Box<dyn Error>> {
-    const DATA: &[(f64, f64)] = &[
-        (800.0, 8.0),
-        (300.0, 3.0),
-        (200.0, 2.0),
-    ];
+    const DATA: &[(f64, f64)] = &[(800.0, 8.0), (300.0, 3.0), (200.0, 2.0)];
 
     for (pascals, expected) in DATA {
         let result = pascals_to_millibars(*pascals);
