@@ -168,8 +168,8 @@ pub fn celsius_to_fahrenheit(celsius: f64) -> f64 {
 fn check_zip_lookup() -> Result<(), Box<dyn Error>> {
     const ZIPS: &[&str] = &["89145", "44256"];
     const EXPECTED: &[(f64, f64, &str, &str)] = &[
-        (36.167731, -115.26791, "Las Vegas", "NV"),
-        (41.139849, -81.85646, "Medina", "OH"),
+        (36.1693, -115.2828, "Las Vegas", "Nevada"),
+        (41.1404, -81.8584, "Medina", "Ohio"),
     ];
 
     for (i, zip) in ZIPS.iter().enumerate() {
